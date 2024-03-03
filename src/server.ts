@@ -54,6 +54,6 @@ app.use((err, req, res, next) => {
   res.status(500).send("something Broke !");
 });
 
-app.use("/api", protect, router); // by adding 'protect' we use auth in the routes
+app.use("/", protect, router); // by adding 'protect' we use auth in the routes
 
 export default app;

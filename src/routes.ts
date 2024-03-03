@@ -1,7 +1,13 @@
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import { handleInputErrors } from "./modules/midleware";
-import { logoutMiddleware, editMiddleware } from "./handlers/admin"; // import {
+import {
+  logoutMiddleware,
+  editMiddleware,
+  createNewStudent,
+  createNewCourse,
+  deleteStudent,
+} from "./handlers/admin"; // import {
 //   createProduct,
 //   deleteProduct,
 //   getAllProducts,
@@ -19,7 +25,7 @@ import { logoutMiddleware, editMiddleware } from "./handlers/admin"; // import {
 const router = Router();
 
 //admin routes :
-router.post("admin/logout", handleInputErrors, logoutMiddleware);
+router.post("/admin/logout", handleInputErrors, logoutMiddleware);
 router.put(
   "/admin/edit/:id",
   body("name").optional().isString(),
@@ -28,6 +34,10 @@ router.put(
   body("photoUrl").optional().isString(),
   editMiddleware
 );
+router.post("/admin/course", handleInputErrors, createNewCourse);
+router.post("/admin/student", handleInputErrors, createNewStudent);
+router.delete("/admin/student/:id", handleInputErrors, deleteStudent);
+router.put("/admin/student/:id", handleInputErrors, editStudent);
 // name: name ? name : null,
 // surname: surname ? surname : null,
 // phoneNumber: phoneNumber ? phoneNumber : null,

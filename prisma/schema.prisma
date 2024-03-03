@@ -20,19 +20,42 @@ enum Role {
 }
 
 model Admin {
-  id        String        @id @default(uuid())
-  createdAt DateTime     @default(now())
-  updatedAt DateTime    @updatedAt
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  email     String        @unique
-  password  String
-  role     Role          @default(ADMIN)
+  email    String @unique
+  password String
+  role     Role   @default(ADMIN)
 
   // Profile information
-  name      String?
-  surname   String?
-  phoneNumber String?     // Optional phone number (default null)
-  photoUrl  String?      // Optional photo URL (default null)
+  name        String?
+  surname     String?
+  phoneNumber String? // Optional phone number (default null)
+  photoUrl    String? // Optional photo URL (default null)
+}
 
+model Course {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  name    String    @unique
+  Student Student[]
+}
+
+model Student {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firstName   String
+  lastName    String
+  email       String  @unique
+  phoneNumber String? 
+
+  password String?
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
 }

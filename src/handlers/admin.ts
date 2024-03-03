@@ -1,3 +1,4 @@
+import { env } from "process";
 import prisma from "../db";
 import { comparePasswords, createJWT, hashPassword } from "../modules/auth";
 import { Request, Response, NextFunction } from "express";
@@ -42,8 +43,13 @@ export const signin = async (req, res, next) => {
   res.json({ token });
 };
 //logout :
+import dotenv from "dotenv";
 
-const SECRET_KEY = "dina Mechraoui"; //secret key
+// Load environment variables from .env file
+dotenv.config();
+
+// Access JWT_SECRET
+const SECRET_KEY = process.env.JWT_SECRET;
 export const logoutMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1]; // Extract the access token from the request (e.g., from headers):
@@ -94,5 +100,69 @@ export const editMiddleware = async (req, res, next) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const createNewStudent = async (req, res, next) => {
+  try {
+    const hashedPassword = await hashPassword(req.body.password);
+    const student = await prisma.student.create({
+      data: {
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email,
+        phoneNumber: req.body.phoneNumber,
+        password: hashedPassword,
+        courseId: req.body.courseId,
+      },
+    });
+    res.json({
+      message: "a student has created succesfully",
+      student: student,
+    });
+  } catch (error) {
+    error.type = "input";
+    next(error);
+  }
+};
+export const createNewCourse = async (req, res, next) => {
+  try {
+    const course = await prisma.course.create({
+      data: {
+        name: req.body.name,
+      },
+    });
+    console.log("this is the course you created : ", course);
+    res.json({
+      message: "a course has created succesfully",
+      course: course,
+    });
+  } catch (error) {
+    error.type = "input";
+    next(error);
+  }
+};
+export const deleteStudent = async (req, res, next) => {
+  try {
+    const studentExists = await prisma.student.findUnique({
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    if (!studentExists) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const deleted = await prisma.student.delete({
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    res.json({ message: "Student deleted successfully" });
+  } catch (error) {
+    // Handle other errors
+    error.type = "input";
+    next(error);
   }
 };
