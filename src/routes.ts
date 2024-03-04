@@ -7,6 +7,7 @@ import {
   createNewStudent,
   createNewCourse,
   deleteStudent,
+  editStudent,
 } from "./handlers/admin"; // import {
 //   createProduct,
 //   deleteProduct,

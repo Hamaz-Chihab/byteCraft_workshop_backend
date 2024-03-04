@@ -166,3 +166,64 @@ export const deleteStudent = async (req, res, next) => {
     next(error);
   }
 };
+import * as yup from "yup"; //JavaScript library used for object schema validation "npm install yup @types/yup"
+
+export const editStudent = async (req, res, next) => {
+  const { id } = req.params;
+  const { firstName, lastName, email, phoneNumber, courseId } = req.body;
+
+  try {
+    // Create a validation schema for the request body
+    const studentSchema = yup.object({
+      firstName: yup.string().required(),
+      lastName: yup.string().required(),
+      email: yup.string().email().required(),
+      phoneNumber: yup.string().optional(),
+      courseId: yup.string().optional(), 
+    });
+
+    try {
+      await studentSchema.validate({
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        courseId,
+      });
+    } catch (error) {
+      if (error instanceof yup.ValidationError) {
+        const errors = error.errors;
+        return res.status(400).json({ errors }); 
+      } else {
+        throw error; 
+      }
+    }
+
+    const existingStudent = await prisma.student.findUnique({
+      where: { id },
+    });
+
+    if (!existingStudent) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const updatedStudent = await prisma.student.update({
+      where: { id },
+      data: {
+        firstName,
+        lastName,
+        email, 
+        phoneNumber,
+        courseId,
+      },
+    });
+
+    res.status(200).json({
+      message: "Student updated successfully",
+      student: updatedStudent,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
