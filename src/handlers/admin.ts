@@ -1,5 +1,7 @@
 import { env } from "process";
 import prisma from "../db";
+import { validateRequest, CourseFilterSchema } from "./validation"; // Import validation logic
+
 import { comparePasswords, createJWT, hashPassword } from "../modules/auth";
 import { Request, Response, NextFunction } from "express";
 import { verify, JwtPayload } from "jsonwebtoken"; // Replace with your library
@@ -179,7 +181,7 @@ export const editStudent = async (req, res, next) => {
       lastName: yup.string().required(),
       email: yup.string().email().required(),
       phoneNumber: yup.string().optional(),
-      courseId: yup.string().optional(), 
+      courseId: yup.string().optional(),
     });
 
     try {
@@ -193,9 +195,9 @@ export const editStudent = async (req, res, next) => {
     } catch (error) {
       if (error instanceof yup.ValidationError) {
         const errors = error.errors;
-        return res.status(400).json({ errors }); 
+        return res.status(400).json({ errors });
       } else {
-        throw error; 
+        throw error;
       }
     }
 
@@ -212,7 +214,7 @@ export const editStudent = async (req, res, next) => {
       data: {
         firstName,
         lastName,
-        email, 
+        email,
         phoneNumber,
         courseId,
       },
@@ -225,5 +227,54 @@ export const editStudent = async (req, res, next) => {
   } catch (error) {
     console.error(error);
     next(error);
+  }
+};
+
+export const getStudents = async (req, res, next) => {
+  try {
+    const { error } = await validateRequest(req.query, CourseFilterSchema);
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const courseId = req.params.id;
+    const page = Number(req.query.page);
+    const limit = Number(req.query.limit);
+    const count = await prisma.student.count({
+      where: {
+        courseId,
+      },
+    });
+    console.log(count, courseId, page, limit);
+    const totalPages = Math.ceil(count / limit); // calculates the total number of pages needed to display all retrieved students
+
+    if (page > totalPages) {
+      return res.status(400).json({ message: "Invalid page number" });
+    }
+
+    const students = await prisma.student.findMany({
+      where: {
+        courseId,
+      },
+      include: {
+        course: true,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    res.status(200).json({
+      students,
+      currentPage: page,
+      totalPages,
+      totalItems: count,
+      nextPage: hasNextPage ? page + 1 : null,
+      previousPage: hasPreviousPage ? page - 1 : null,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error); // Pass error to error handling middleware
   }
 };

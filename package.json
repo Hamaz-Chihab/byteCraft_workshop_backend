@@ -1,5 +1,8 @@
 {
   "name": "api-design-in-node",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
