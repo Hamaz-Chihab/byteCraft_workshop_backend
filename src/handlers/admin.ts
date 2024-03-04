@@ -238,8 +238,8 @@ export const getStudents = async (req, res, next) => {
     }
 
     const courseId = req.params.id;
-    const page = Number(req.query.page);
-    const limit = Number(req.query.limit);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
     const count = await prisma.student.count({
       where: {
         courseId,
