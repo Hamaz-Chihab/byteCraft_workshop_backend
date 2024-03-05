@@ -23,30 +23,40 @@ export const createNewAdmin = async (req, res, next) => {
   } catch (error) {
     error.type = "input";
     next(error);
-    // res.status(500).json({ error: error.message });
   }
 };
 
 //sign in
 
 export const signin = async (req, res, next) => {
-  const admin = await prisma.admin.findUnique({
-    where: {
-      email: req.body.email,
-    },
-  });
-  const isValid = await comparePasswords(req.body.password, admin.password);
-  if (!isValid) {
-    res.status(401);
-    res.json({
-      massage: "nope you are not authorized please put Token in headers",
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: {
+        email: req.body.email,
+      },
     });
-    return;
-  }
 
-  const token = createJWT(admin);
-  res.json({ token, admin });
+    if (!admin) {
+      // Handle "not found" error with a clear message and appropriate status code
+      return res.status(404).json({ message: "Invalid email or password" });
+    }
+
+    const isValid = await comparePasswords(req.body.password, admin.password);
+    if (!isValid) {
+      // Handle invalid password error with a clear message and appropriate status code
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const token = createJWT(admin);
+    res.status(200).json({ token, admin }); // Include the entire admin object in the response
+  } catch (error) {
+    console.error(error);
+    // Handle other potential errors (e.g., database errors) with a generic error message and status code
+    res.status(500).json({ message: "Internal Server Error" });
+    next(error); // Pass error to error handling middleware (optional)
+  }
 };
+
 //logout :
 import dotenv from "dotenv";
 

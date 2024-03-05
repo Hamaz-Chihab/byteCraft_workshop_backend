@@ -1,6 +1,7 @@
 import express from "express";
 import morgan from "morgan";
 import router from "./routes";
+import { handleInputErrors } from "./modules/midleware";
 
 import { protect } from "./modules/auth";
 import { createNewAdmin, signin } from "./handlers/admin";
@@ -31,6 +32,7 @@ app.post(
     }
     next();
   },
+  handleInputErrors,
   createNewAdmin
 );
 app.post(
@@ -40,6 +42,7 @@ app.post(
     .withMessage("Enter a valid email address")
     .normalizeEmail(),
   check("password").not().isEmpty(),
+  handleInputErrors,
   signin
 );
 app.use((err, req, res, next) => {
