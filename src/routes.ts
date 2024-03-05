@@ -43,6 +43,6 @@ router.put("/admin/student/:id", handleInputErrors, editStudent);
 // Page: The value of the page parameter is 2. This indicates that the user is requesting the second page of results.
 // Limit: The value of the limit parameter is 20. This specifies that the user wants the API to return a maximum of 20 students per page.
 // EX :http://localhost:3000/admin/students/bf4db169-eda9-49c8-9df9-32072a4a0db7&page=2&limit=20
-router.get("/admin/students/:id", handleInputErrors, getStudents);
+router.get("/admin/students", handleInputErrors, getStudents);
 
 export default router;

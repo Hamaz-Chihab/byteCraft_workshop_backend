@@ -1,11 +1,13 @@
 import { env } from "process";
-import prisma from "../db";
+// import prisma from "../db";
 import { validateRequest, CourseFilterSchema } from "./validation"; // Import validation logic
 
 import { comparePasswords, createJWT, hashPassword } from "../modules/auth";
 import { Request, Response, NextFunction } from "express";
 import { verify, JwtPayload } from "jsonwebtoken"; // Replace with your library
+import { PrismaClient } from "@prisma/client";
 
+const prisma = new PrismaClient();
 //login
 export const createNewAdmin = async (req, res, next) => {
   try {
@@ -17,7 +19,7 @@ export const createNewAdmin = async (req, res, next) => {
       },
     });
     const token = createJWT(admin);
-    res.json({ token: token, message: "Admin has created succesfully" });
+    res.json({ token: token, admin, message: "Admin has created succesfully" });
   } catch (error) {
     error.type = "input";
     next(error);
@@ -41,8 +43,9 @@ export const signin = async (req, res, next) => {
     });
     return;
   }
+
   const token = createJWT(admin);
-  res.json({ token });
+  res.json({ token, admin });
 };
 //logout :
 import dotenv from "dotenv";
@@ -229,39 +232,60 @@ export const editStudent = async (req, res, next) => {
     next(error);
   }
 };
+// import { PrismaClient } from "@prisma/client";
+
+// const prisma = new PrismaClient();
 
 export const getStudents = async (req, res, next) => {
   try {
-    const { error } = await validateRequest(req.query, CourseFilterSchema);
+    // Define query params interface for type safety
+    interface GetStudentsQuery {
+      page: number;
+      limit?: number;
+      courseId?: string;
+      name?: string;
+    }
+
+    // Validate request with expected query params and data types
+    const { error } = await validateRequest(
+      req.query as GetStudentsQuery,
+      CourseFilterSchema
+    );
     if (error) {
       return res.status(400).json({ message: error.message });
     }
 
-    const courseId = req.params.id;
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 5;
-    const count = await prisma.student.count({
-      where: {
-        courseId,
-      },
-    });
-    console.log(count, courseId, page, limit);
-    const totalPages = Math.ceil(count / limit); // calculates the total number of pages needed to display all retrieved students
+    const { page, limit = 5, courseId, name } = req.query as GetStudentsQuery;
 
+    // Build filter conditions based on provided query params
+    const whereClause: { [key: string]: any } = {};
+    if (courseId) {
+      whereClause.courseId = courseId;
+    } else if (name) {
+      // Search by full name or individual names
+      whereClause.OR = [
+        { firstName: { contains: name, mode: "insensitive" } },
+        { lastName: { contains: name, mode: "insensitive" } },
+      ];
+    }
+
+    // Count students based on the filter
+    const count = await prisma.student.count({ where: whereClause });
+    const totalPages = Math.ceil(count / limit);
+
+    // Handle invalid page number
     if (page > totalPages) {
       return res.status(400).json({ message: "Invalid page number" });
     }
 
+    // Fetch students with pagination and include course information
     const students = await prisma.student.findMany({
-      where: {
-        courseId,
-      },
-      include: {
-        course: true,
-      },
+      where: whereClause,
+      include: { course: true },
       skip: (page - 1) * limit,
       take: limit,
     });
+
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
@@ -278,3 +302,52 @@ export const getStudents = async (req, res, next) => {
     next(error); // Pass error to error handling middleware
   }
 };
+
+// export const getStudents = async (req, res, next) => {
+//   try {
+//     const { error } = await validateRequest(req.query, CourseFilterSchema);
+//     if (error) {
+//       return res.status(400).json({ message: error.message });
+//     }
+
+//     const courseId = req.params.id;
+//     const page = Number(req.query.page) || 1;
+//     const limit = Number(req.query.limit) || 5;
+//     const count = await prisma.student.count({
+//       where: {
+//         courseId,
+//       },
+//     });
+//     console.log(count, courseId, page, limit);
+//     const totalPages = Math.ceil(count / limit); // calculates the total number of pages needed to display all retrieved students
+
+//     if (page > totalPages) {
+//       return res.status(400).json({ message: "Invalid page number" });
+//     }
+
+//     const students = await prisma.student.findMany({
+//       where: {
+//         courseId,
+//       },
+//       include: {
+//         course: true,
+//       },
+//       skip: (page - 1) * limit,
+//       take: limit,
+//     });
+//     const hasNextPage = page < totalPages;
+//     const hasPreviousPage = page > 1;
+
+//     res.status(200).json({
+//       students,
+//       currentPage: page,
+//       totalPages,
+//       totalItems: count,
+//       nextPage: hasNextPage ? page + 1 : null,
+//       previousPage: hasPreviousPage ? page - 1 : null,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     next(error); // Pass error to error handling middleware
+//   }
+// };
