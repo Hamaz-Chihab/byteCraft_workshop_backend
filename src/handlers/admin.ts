@@ -255,8 +255,20 @@ export const getStudents = async (req, res, next) => {
       return res.status(400).json({ message: error.message });
     }
 
-    const { page, limit = 5, courseId, name } = req.query as GetStudentsQuery;
-
+    let { page, limit, courseId, name } = req.query as GetStudentsQuery;
+    try {
+      limit = Number(limit) || 5;
+      if (isNaN(limit)) {
+        throw new Error("Invalid limit parameter. Please provide a number.");
+      }
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+    // if (typeof limit !== "number") {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Invalid limit parameter. Please provide a number." });
+    // }
     // Build filter conditions based on provided query params
     const whereClause: { [key: string]: any } = {};
     if (courseId) {
@@ -271,7 +283,7 @@ export const getStudents = async (req, res, next) => {
 
     // Count students based on the filter
     const count = await prisma.student.count({ where: whereClause });
-    const totalPages = Math.ceil(count / limit);
+    const totalPages = Math.ceil(count / limit || 5);
 
     // Handle invalid page number
     if (page > totalPages) {
