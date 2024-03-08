@@ -2,7 +2,8 @@ import express from "express";
 import morgan from "morgan";
 import router from "./routes";
 import { handleInputErrors } from "./modules/midleware";
-
+import swaggerUi from "swagger-ui-express";
+import * as swaggerDocument from "./swagger.json";
 import { protect } from "./modules/auth";
 import { createNewAdmin, signin } from "./handlers/admin";
 import { check, validationResult } from "express-validator";
